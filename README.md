@@ -1,0 +1,2 @@
+# Inverted_Pendulum
+一阶倒立摆离散模型的python实现
