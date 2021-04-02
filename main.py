@@ -11,11 +11,12 @@ if __name__ == '__main__':
                                         stick_lenght=0.6,
                                         friction=1,
                                         initial_theta=0,
-                                        sample_time = 0.002
+                                        sample_time = 0.005,
+                                        internal_iter_times=2
                                         )
 
     # 迭代次数
-    times = 10000
+    times = 4000
 
     posi_array = np.zeros((times,))
     theta_array = np.zeros((times,))

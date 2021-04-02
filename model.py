@@ -38,11 +38,20 @@ class FirstOrderInvertedPendulum:
     stick_length: 摆杆长度 \\
     friction: 摩擦系数 \\
     initial_theta: 摆角初始角度 \\
-    sample_time: 采样时间
+    sample_time: 采样时间 \\
+    internal_iter_times: 内部迭代次数
+        此参数控制着系统在一个采样时间周期里更新状态的次数，该次数越大，梯形积分的逼近程度越好，
+        在一个采样周期后得到的系统输出也就更准确，但该行为会带来更大的计算量。
+        默认值为2。
     '''
 
     def __init__(self, M_car, M_stick, stick_lenght, friction, initial_theta, 
-                    sample_time):
+                    sample_time, internal_iter_times=2):
+
+        # 检查参数是否合法
+        if internal_iter_times < 1:
+            raise ValueError('internal_iter_times参数的值必须大于0')
+        
         # 小车质量
         self.M_car = M_car
 
@@ -66,6 +75,11 @@ class FirstOrderInvertedPendulum:
 
         # 采样时间
         self.sample_time = sample_time
+
+        # 内部迭代次数
+        self.__internal_iter_times = internal_iter_times
+        # 梯形积分所用的真实采样时间
+        self.__internal_Ts = sample_time / internal_iter_times
 
         self.X_car_nabla = 0  # 小车位置一阶微分
         self.X_car_nabla_2 = 0  # 小车位置二阶微分
@@ -97,44 +111,46 @@ class FirstOrderInvertedPendulum:
         input_force: 施加在小车上的力
         '''
         self.input_force = input_force
+
+        for _ in range(self.__internal_iter_times):
         
-        #************** 位移X ********************
+            #************** 位移X ********************
 
-        # 计算位移二阶微分方程
+            # 计算位移二阶微分方程
 
-        num = self.term_Jml * self.input_force \
-            - self.term_Jml * self.friction * self.X_car_nabla \
-            + self.l_stick * self.M_stick * self.term_Jml * sin(self.theta) * self.theta_nabla**2 \
-            - self.M_stick**2 * self.l_stick**2 * self.G * sin(self.theta) * cos(self.theta)
+            num = self.term_Jml * self.input_force \
+                - self.term_Jml * self.friction * self.X_car_nabla \
+                + self.l_stick * self.M_stick * self.term_Jml * sin(self.theta) * self.theta_nabla**2 \
+                - self.M_stick**2 * self.l_stick**2 * self.G * sin(self.theta) * cos(self.theta)
 
-        den = self.term_Jml * (self.M_car + self.M_stick) \
-            - self.M_stick**2 * self.l_stick**2 * cos(self.theta)**2
+            den = self.term_Jml * (self.M_car + self.M_stick) \
+                - self.M_stick**2 * self.l_stick**2 * cos(self.theta)**2
 
-        self.X_car_nabla_2 = num / den
+            self.X_car_nabla_2 = num / den
 
-        # 一次积分，输出位置一阶微分
-        self.X_car_nabla = self.integrator_x_1.Add(self.X_car_nabla_2, self.sample_time)
-        # 二次积分，输出位置
-        self.X_car = self.integrator_x_2.Add(self.X_car_nabla, self.sample_time)
+            # 一次积分，输出位置一阶微分
+            self.X_car_nabla = self.integrator_x_1.Add(self.X_car_nabla_2, self.__internal_Ts)
+            # 二次积分，输出位置
+            self.X_car = self.integrator_x_2.Add(self.X_car_nabla, self.__internal_Ts)
 
-        #************* 摆角theta *****************
+            #************* 摆角theta *****************
 
-        # 计算摆角二阶微分方程
+            # 计算摆角二阶微分方程
 
-        num = self.M_stick * self.l_stick * cos(self.theta) * self.input_force \
-            - self.M_stick * self.l_stick * cos(self.theta) * self.friction * self.X_car_nabla \
-            + self.M_stick**2 * self.l_stick**2 * sin(self.theta) * cos(self.theta) * self.theta_nabla**2 \
-            - (self.M_car + self.M_stick) * self.M_stick * self.l_stick * self.G * sin(self.theta)
+            num = self.M_stick * self.l_stick * cos(self.theta) * self.input_force \
+                - self.M_stick * self.l_stick * cos(self.theta) * self.friction * self.X_car_nabla \
+                + self.M_stick**2 * self.l_stick**2 * sin(self.theta) * cos(self.theta) * self.theta_nabla**2 \
+                - (self.M_car + self.M_stick) * self.M_stick * self.l_stick * self.G * sin(self.theta)
 
-        den = self.M_stick**2 * self.l_stick**2 * cos(self.theta)**2 \
-            - (self.M_car + self.M_stick) * self.term_Jml
+            den = self.M_stick**2 * self.l_stick**2 * cos(self.theta)**2 \
+                - (self.M_car + self.M_stick) * self.term_Jml
 
-        self.theta_nabla_2 = num / den
+            self.theta_nabla_2 = num / den
 
-        # 一次积分，输出摆角一阶微分
-        self.theta_nabla = self.integrator_theta_1.Add(self.theta_nabla_2, self.sample_time)
-        # 二次积分，输出摆角
-        self.theta = self.integrator_theta_2.Add(self.theta_nabla, self.sample_time)
+            # 一次积分，输出摆角一阶微分
+            self.theta_nabla = self.integrator_theta_1.Add(self.theta_nabla_2, self.__internal_Ts)
+            # 二次积分，输出摆角
+            self.theta = self.integrator_theta_2.Add(self.theta_nabla, self.__internal_Ts)
 
 
     def get_position(self):
