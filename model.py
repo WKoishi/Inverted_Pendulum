@@ -42,11 +42,11 @@ class FirstOrderInvertedPendulum:
     internal_iter_times: 内部迭代次数
         此参数控制着系统在一个采样时间周期里更新状态的次数，该次数越大，梯形积分的逼近程度越好，
         在一个采样周期后得到的系统输出也就更准确，但该行为会带来更大的计算量。
-        默认值为2。
+        默认值为4。
     '''
 
     def __init__(self, M_car, M_stick, stick_lenght, friction, initial_theta, 
-                    sample_time, internal_iter_times=2):
+                    sample_time, internal_iter_times=4):
 
         # 检查参数是否合法
         if internal_iter_times < 1:
@@ -91,9 +91,12 @@ class FirstOrderInvertedPendulum:
         J_stick = (self.M_stick * self.l_stick**2) / 3.0
 
         # (J + ml^2)
-        self.term_Jml = J_stick + self.M_stick * self.l_stick**2
+        self.__term_Jml = J_stick + self.M_stick * self.l_stick**2
 
-        self.G = 9.8
+        # (m^2 * l^2)
+        self.__term_m2l2 = self.M_stick**2 * self.l_stick**2
+
+        self.__G = 9.8
 
         # 系统包含的积分器
         self.integrator_x_1 = BilinearIntegrator()
@@ -113,18 +116,21 @@ class FirstOrderInvertedPendulum:
         self.input_force = input_force
 
         for _ in range(self.__internal_iter_times):
+
+            sin_theta = sin(self.theta)
+            cos_theta = cos(self.theta)
         
             #************** 位移X ********************
 
             # 计算位移二阶微分方程
 
-            num = self.term_Jml * self.input_force \
-                - self.term_Jml * self.friction * self.X_car_nabla \
-                + self.l_stick * self.M_stick * self.term_Jml * sin(self.theta) * self.theta_nabla**2 \
-                - self.M_stick**2 * self.l_stick**2 * self.G * sin(self.theta) * cos(self.theta)
+            num = self.__term_Jml * self.input_force \
+                - self.__term_Jml * self.friction * self.X_car_nabla \
+                + self.l_stick * self.M_stick * self.__term_Jml * sin_theta * self.theta_nabla**2 \
+                - self.__term_m2l2 * self.__G * sin_theta * cos_theta
 
-            den = self.term_Jml * (self.M_car + self.M_stick) \
-                - self.M_stick**2 * self.l_stick**2 * cos(self.theta)**2
+            den = self.__term_Jml * (self.M_car + self.M_stick) \
+                - self.__term_m2l2 * cos_theta**2
 
             self.X_car_nabla_2 = num / den
 
@@ -137,13 +143,13 @@ class FirstOrderInvertedPendulum:
 
             # 计算摆角二阶微分方程
 
-            num = self.M_stick * self.l_stick * cos(self.theta) * self.input_force \
-                - self.M_stick * self.l_stick * cos(self.theta) * self.friction * self.X_car_nabla \
-                + self.M_stick**2 * self.l_stick**2 * sin(self.theta) * cos(self.theta) * self.theta_nabla**2 \
-                - (self.M_car + self.M_stick) * self.M_stick * self.l_stick * self.G * sin(self.theta)
+            num = self.M_stick * self.l_stick * cos_theta * self.input_force \
+                - self.M_stick * self.l_stick * cos_theta * self.friction * self.X_car_nabla \
+                + self.__term_m2l2 * sin_theta * cos_theta * self.theta_nabla**2 \
+                - (self.M_car + self.M_stick) * self.M_stick * self.l_stick * self.__G * sin_theta
 
-            den = self.M_stick**2 * self.l_stick**2 * cos(self.theta)**2 \
-                - (self.M_car + self.M_stick) * self.term_Jml
+            den = self.__term_m2l2 * cos_theta**2 \
+                - (self.M_car + self.M_stick) * self.__term_Jml
 
             self.theta_nabla_2 = num / den
 

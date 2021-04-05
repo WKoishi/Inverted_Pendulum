@@ -11,8 +11,8 @@ if __name__ == '__main__':
                                         stick_lenght=0.6,
                                         friction=1,
                                         initial_theta=0,
-                                        sample_time = 0.005,
-                                        internal_iter_times=2
+                                        sample_time = 0.01,
+                                        internal_iter_times=10
                                         )
 
     # 迭代次数
