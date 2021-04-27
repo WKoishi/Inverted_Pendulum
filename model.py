@@ -6,7 +6,7 @@ Description: 倒立摆离散模型
 
 from math import sin, cos, pi
 
-class BilinearIntegrator:
+class TustinIntegrator:
     '''经过双线性变换法离散化的积分器
     '''
     def __init__(self, initial_state=0):
@@ -21,11 +21,31 @@ class BilinearIntegrator:
         input_val: 积分输入值 \\
         sample_time: 采样时间
         '''
-        T = sample_time / 2.0
-        self.integrator_DSTATE += T * (input_val + self.last_input)
+        self.integrator_DSTATE += (sample_time / 2.0) * (input_val + self.last_input)
         self.last_input = input_val
 
         return self.integrator_DSTATE
+
+
+class Differentiator:
+    '''一阶离散微分器
+    '''
+    def __init__(self):
+        self.last_input = 0
+
+    def Sub(self, input_val, sample_time):
+        '''进行一次一阶差分
+
+        Parameter:
+        -----------
+        input_val: 输出值 \\
+        sample_time: 采样时间
+        '''
+        F = 1.0 / sample_time
+        output = F * (input_val - self.last_input)
+        self.last_input = input_val
+
+        return output
 
 
 class FirstOrderInvertedPendulum:
@@ -99,11 +119,11 @@ class FirstOrderInvertedPendulum:
         self.__G = 9.8
 
         # 系统包含的积分器
-        self.integrator_x_1 = BilinearIntegrator()
-        self.integrator_x_2 = BilinearIntegrator()
-        self.integrator_theta_1 = BilinearIntegrator()
+        self.integrator_x_1 = TustinIntegrator()
+        self.integrator_x_2 = TustinIntegrator()
+        self.integrator_theta_1 = TustinIntegrator()
         # 给系统赋予初始摆角
-        self.integrator_theta_2 = BilinearIntegrator(initial_state=initial_theta)
+        self.integrator_theta_2 = TustinIntegrator(initial_state=initial_theta)
 
 
     def forward(self, input_force):
@@ -117,29 +137,10 @@ class FirstOrderInvertedPendulum:
 
         for _ in range(self.__internal_iter_times):
 
+            #************* 摆角theta *****************
+
             sin_theta = sin(self.theta)
             cos_theta = cos(self.theta)
-        
-            #************** 位移X ********************
-
-            # 计算位移二阶微分方程
-
-            num = self.__term_Jml * self.input_force \
-                - self.__term_Jml * self.friction * self.X_car_nabla \
-                + self.l_stick * self.M_stick * self.__term_Jml * sin_theta * self.theta_nabla**2 \
-                - self.__term_m2l2 * self.__G * sin_theta * cos_theta
-
-            den = self.__term_Jml * (self.M_car + self.M_stick) \
-                - self.__term_m2l2 * cos_theta**2
-
-            self.X_car_nabla_2 = num / den
-
-            # 一次积分，输出位置一阶微分
-            self.X_car_nabla = self.integrator_x_1.Add(self.X_car_nabla_2, self.__internal_Ts)
-            # 二次积分，输出位置
-            self.X_car = self.integrator_x_2.Add(self.X_car_nabla, self.__internal_Ts)
-
-            #************* 摆角theta *****************
 
             # 计算摆角二阶微分方程
 
@@ -157,6 +158,28 @@ class FirstOrderInvertedPendulum:
             self.theta_nabla = self.integrator_theta_1.Add(self.theta_nabla_2, self.__internal_Ts)
             # 二次积分，输出摆角
             self.theta = self.integrator_theta_2.Add(self.theta_nabla, self.__internal_Ts)
+        
+            #************** 位移X ********************
+
+            sin_theta = sin(self.theta)
+            cos_theta = cos(self.theta)
+
+            # 计算位移二阶微分方程
+
+            num = self.__term_Jml * self.input_force \
+                - self.__term_Jml * self.friction * self.X_car_nabla \
+                + self.l_stick * self.M_stick * self.__term_Jml * sin_theta * self.theta_nabla**2 \
+                - self.__term_m2l2 * self.__G * sin_theta * cos_theta
+
+            den = self.__term_Jml * (self.M_car + self.M_stick) \
+                - self.__term_m2l2 * cos_theta**2
+
+            self.X_car_nabla_2 = num / den
+
+            # 一次积分，输出位置一阶微分
+            self.X_car_nabla = self.integrator_x_1.Add(self.X_car_nabla_2, self.__internal_Ts)
+            # 二次积分，输出位置
+            self.X_car = self.integrator_x_2.Add(self.X_car_nabla, self.__internal_Ts)
 
 
     def get_position(self):
