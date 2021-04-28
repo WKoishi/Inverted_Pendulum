@@ -1,4 +1,4 @@
-from model import FirstOrderInvertedPendulum
+from model_RK4 import FirstOrderInvertedPendulum
 from math import pi
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,10 +9,10 @@ if __name__ == '__main__':
     ip_model = FirstOrderInvertedPendulum(M_car=1, 
                                         M_stick=1,
                                         stick_lenght=0.6,
-                                        friction=1,
+                                        friction=0.8,
                                         initial_theta=0,
                                         sample_time = 0.01,
-                                        internal_iter_times=10
+                                        #internal_iter_times=10
                                         )
 
     # 迭代次数
