@@ -131,29 +131,32 @@ class FirstOrderInvertedPendulum:
         x_l1 = self.__x_state_cal(self.input_force, self.__X_car_nabla, 
                                 self.theta, self.__theta_nabla)
 
-        t_k2 = self.__theta_nabla + t_l1 * rk_h / 2.0
-        t_l2 = self.__theta_state_cal(self.input_force + rk_h/2, self.__X_car_nabla + x_l1*rk_h/2, 
-                                self.theta + t_k1*rk_h/2, self.__theta_nabla + t_l1*rk_h/2)
-
+        t_k2 = self.__theta_nabla + t_l1*rk_h/2
         x_k2 = self.__X_car_nabla + x_l1*rk_h/2
-        x_l2 = self.__x_state_cal(self.input_force + rk_h/2, self.__X_car_nabla + x_l1*rk_h/2,
-                                self.theta + t_k1*rk_h/2, self.__theta_nabla + t_l1*rk_h/2)
 
-        t_k3 = self.__theta_nabla + t_l2 * rk_h/2
-        t_l3 = self.__theta_state_cal(self.input_force + rk_h/2, self.__X_car_nabla + x_l2*rk_h/2, 
-                                self.theta + t_k2*rk_h/2, self.__theta_nabla + t_l2*rk_h/2)
+        t_l2 = self.__theta_state_cal(self.input_force + rk_h/2, x_k2, 
+                                self.theta + t_k1*rk_h/2, t_k2)
 
+        x_l2 = self.__x_state_cal(self.input_force + rk_h/2, x_k2,
+                                self.theta + t_k1*rk_h/2, t_k2)
+
+        t_k3 = self.__theta_nabla + t_l2*rk_h/2
         x_k3 = self.__X_car_nabla + x_l2*rk_h/2
-        x_l3 = self.__x_state_cal(self.input_force + rk_h/2, self.__X_car_nabla + x_l2*rk_h/2, 
-                                self.theta + t_k2*rk_h/2, self.__theta_nabla + t_l2*rk_h/2)
 
-        t_k4 = self.__theta_nabla + t_l3 * rk_h
-        t_l4 = self.__theta_state_cal(self.input_force + rk_h, self.__X_car_nabla + x_l3*rk_h, 
-                                self.theta + t_k3*rk_h, self.__theta_nabla + t_l3*rk_h)
+        t_l3 = self.__theta_state_cal(self.input_force + rk_h/2, x_k3, 
+                                self.theta + t_k2*rk_h/2, t_k3)
 
+        x_l3 = self.__x_state_cal(self.input_force + rk_h/2, x_k3, 
+                                self.theta + t_k2*rk_h/2, t_k3)
+
+        t_k4 = self.__theta_nabla + t_l3*rk_h
         x_k4 = self.__X_car_nabla + x_l3*rk_h
-        x_l4 = self.__x_state_cal(self.input_force + rk_h, self.__X_car_nabla + x_l3*rk_h,
-                                self.theta + t_k3*rk_h, self.__theta_nabla + t_l3*rk_h)
+
+        t_l4 = self.__theta_state_cal(self.input_force + rk_h, x_k4, 
+                                self.theta + t_k3*rk_h, t_k4)
+
+        x_l4 = self.__x_state_cal(self.input_force + rk_h, x_k4,
+                                self.theta + t_k3*rk_h, t_k4)
 
 
         self.theta += (t_k1 + 2*t_k2 + 2*t_k3 + t_k4) * rk_h / 6
