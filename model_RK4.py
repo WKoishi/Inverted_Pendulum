@@ -61,8 +61,8 @@ class FirstOrderInvertedPendulum:
     sample_time: 采样时间
     '''
 
-    def __init__(self, M_car, M_stick, stick_lenght, friction, initial_theta, 
-                    sample_time):
+    def __init__(self, M_car, M_stick, stick_lenght, initial_theta, sample_time, 
+                    friction=0):
         
         # 小车质量
         self.M_car = M_car
