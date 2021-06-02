@@ -65,8 +65,8 @@ class FirstOrderInvertedPendulum:
         默认值为4。
     '''
 
-    def __init__(self, M_car, M_stick, stick_lenght, friction, initial_theta, 
-                    sample_time, internal_iter_times=4):
+    def __init__(self, M_car, M_stick, stick_lenght, initial_theta, 
+                    sample_time, friction=0, internal_iter_times=4):
 
         # 检查参数是否合法
         if internal_iter_times < 1:
