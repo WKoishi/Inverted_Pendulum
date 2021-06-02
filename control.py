@@ -52,7 +52,7 @@ class InvertedPendulumSimulator:
         self.is_swing_up = False
         self.is_impulse = 1
 
-    def swing_up(self, gain, theta, theta_nabla):
+    def swing_up_control(self, gain, theta, theta_nabla):
         
         kinetic_energy = (1/240) * theta_nabla**2
 
@@ -74,21 +74,21 @@ class InvertedPendulumSimulator:
 
         return output
 
-    def lqr_control(self, target, theta, theta_nabla, posi, posi_nabla):
-        if self.is_slow_mode:
-            feedback_gain = self.feedback_gain_slow
-        else:
-            feedback_gain = self.feedback_gain_fast
+    # def lqr_control(self, target, theta, theta_nabla, posi, posi_nabla):
+    #     if self.is_slow_mode:
+    #         feedback_gain = self.feedback_gain_slow
+    #     else:
+    #         feedback_gain = self.feedback_gain_fast
 
-        # 计算状态反馈量
-        feedback = theta * feedback_gain[0] \
-                + theta_nabla * feedback_gain[1] \
-                + posi * feedback_gain[2] \
-                + posi_nabla * feedback_gain[3]
+    #     # 计算状态反馈量
+    #     feedback = theta * feedback_gain[0] \
+    #             + theta_nabla * feedback_gain[1] \
+    #             + posi * feedback_gain[2] \
+    #             + posi_nabla * feedback_gain[3]
 
-        output = target * feedback_gain[2] - feedback
+    #     output = target * feedback_gain[2] - feedback
 
-        return output
+    #     return output
 
     def pid_control(self, target, theta, last_theta, posi, last_posi):
         position_gain = 0.3
@@ -117,17 +117,12 @@ class InvertedPendulumSimulator:
 
         if self.is_swing_up:
 
-            if self.LQR_CONTROL_ENABLE:
-                force_input = self.lqr_control(self.position_target, self.now_theta, 
-                                self.theta_nabla, self.now_position, self.posi_nabla)
-            
-            else:
-                force_input = self.pid_control(self.position_target, self.now_theta, 
-                                self.last_theta, self.now_position, self.last_position)
+            force_input = self.pid_control(self.position_target, self.now_theta, 
+                            self.last_theta, self.now_position, self.last_position)
 
         else:
 
-            force_input = self.swing_up(350, self.last_theta, self.theta_nabla)
+            force_input = self.swing_up_control(350, self.last_theta, self.theta_nabla)
 
             # 产生一个冲激信号
             if self.is_impulse:
@@ -148,11 +143,11 @@ class InvertedPendulumSimulator:
         self.now_theta = self.ip_model.get_theta()
         self.theta_nabla = self.theta_differ.Sub(self.now_theta, self.sample_time)
 
-        if self.is_swing_up:
-            if abs(self.now_theta) > pi/6 and self.is_slow_mode == False:
-                self.is_slow_mode = True
-            elif abs(self.now_theta) < pi/18 and self.is_slow_mode == True:
-                self.is_slow_mode = False
+        # if self.is_swing_up:
+        #     if abs(self.now_theta) > pi/6 and self.is_slow_mode == False:
+        #         self.is_slow_mode = True
+        #     elif abs(self.now_theta) < pi/18 and self.is_slow_mode == True:
+        #         self.is_slow_mode = False
 
         if self.is_swing_up == False and abs(self.now_theta) < pi/6:
             self.is_swing_up = True
