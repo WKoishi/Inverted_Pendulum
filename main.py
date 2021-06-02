@@ -1,49 +1,32 @@
-from model_RK4 import FirstOrderInvertedPendulum
-from math import pi
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from control import InvertedPendulumSimulator
+import socket
+
+sample_time = 0.005
+
+iteration = 3000
 
 if __name__ == '__main__':
 
-    # 建立模型
-    ip_model = FirstOrderInvertedPendulum(M_car=1, 
-                                        M_stick=1,
-                                        stick_lenght=0.6,
-                                        friction=0.8,
-                                        initial_theta=0,
-                                        sample_time = 0.01,
-                                        #internal_iter_times=10
-                                        )
+    simulator = InvertedPendulumSimulator(sample_time)
 
-    # 迭代次数
-    times = 4000
+    theta_array = np.zeros((iteration))
+    posi_array = np.zeros((iteration))
 
-    posi_array = np.zeros((times,))
-    theta_array = np.zeros((times,))
-    velocity_array = np.zeros((times,))
-    input_val = 0
+    for i in range(iteration):
 
-    # 进行迭代
-    for i in range(times):
-        if i < 100:
-            input_val = 1
-        else:
-            input_val = 0
+        simulator.runtime(0)
 
-        ip_model.forward(input_val)
+        theta_array[i] = simulator.get_theta()
+        posi_array[i] = simulator.get_position()
 
-        # 记录系统当前状态
-        theta_array[i] = ip_model.get_theta()
-        posi_array[i] = ip_model.get_position()
-        velocity_array[i] = ip_model.get_car_velocity()
-
-    x = np.arange(times)
+    x = np.arange(iteration)
     plt.plot(x, theta_array, label='theta')
     plt.plot(x, posi_array, label='car position')
-    plt.plot(x, velocity_array, label='car velocity')
+    #plt.plot(x, force_array, label='force')
     plt.legend()
     plt.grid()
     plt.show()
-
 
 
