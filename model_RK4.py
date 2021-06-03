@@ -96,10 +96,14 @@ class FirstOrderInvertedPendulum:
         J_stick = (self.M_stick * self.l_stick**2) / 3.0
 
         # (J + ml^2)
-        self.term_Jml = J_stick + self.M_stick * self.l_stick**2
+        self.term_stick_Jml = J_stick + self.M_stick * self.l_stick**2
 
         # (m^2 * l^2)
-        self.term_m2l2 = self.M_stick**2 * self.l_stick**2
+        self.term_stick_m2l2 = self.M_stick**2 * self.l_stick**2
+
+        self.term_stick_ml = self.M_stick * self.l_stick
+
+        self.term_M_sum = self.M_car + self.M_stick
 
         self.__G__ = 9.8
 
@@ -158,7 +162,6 @@ class FirstOrderInvertedPendulum:
         x_l4 = self.__x_state_cal(self.input_force, x_k4,
                                 self.theta + t_k3*rk_h, t_k4)
 
-
         self.theta += (t_k1 + 2*t_k2 + 2*t_k3 + t_k4) * rk_h / 6
         self.__theta_nabla += (t_l1 + 2*t_l2 + 2*t_l3 + t_l4) * rk_h / 6
 
@@ -170,13 +173,13 @@ class FirstOrderInvertedPendulum:
         sin_theta = sin(theta)
         cos_theta = cos(theta)
 
-        num = self.term_Jml * input_val \
-            - self.term_Jml * self.friction * x_1 \
-            + self.l_stick * self.M_stick * self.term_Jml * sin_theta * theta_1**2 \
-            - self.term_m2l2 * self.__G__ * sin_theta * cos_theta
+        num = self.term_stick_Jml * input_val \
+            - self.term_stick_Jml * self.friction * x_1 \
+            + self.term_stick_ml * self.term_stick_Jml * sin_theta * theta_1**2 \
+            - self.term_stick_m2l2 * self.__G__ * sin_theta * cos_theta
 
-        den = self.term_Jml * (self.M_car + self.M_stick) \
-            - self.term_m2l2 * cos_theta**2
+        den = self.term_stick_Jml * self.term_M_sum \
+            - self.term_stick_m2l2 * cos_theta**2
 
         return num / den
 
@@ -184,13 +187,13 @@ class FirstOrderInvertedPendulum:
         sin_theta = sin(theta)
         cos_theta = cos(theta)
 
-        num = self.M_stick * self.l_stick * cos_theta * input_val \
-            - self.M_stick * self.l_stick * cos_theta * self.friction * x_1 \
-            + self.term_m2l2 * sin_theta * cos_theta * theta_1**2 \
-            - (self.M_car + self.M_stick) * self.M_stick * self.l_stick * self.__G__ * sin_theta
+        num = self.term_stick_ml * cos_theta * input_val \
+            - self.term_stick_ml * cos_theta * self.friction * x_1 \
+            + self.term_stick_m2l2 * sin_theta * cos_theta * theta_1**2 \
+            - self.term_M_sum * self.term_stick_ml * self.__G__ * sin_theta
 
-        den = self.term_m2l2 * cos_theta**2 \
-            - (self.M_car + self.M_stick) * self.term_Jml
+        den = self.term_stick_m2l2 * cos_theta**2 \
+            - self.term_M_sum * self.term_stick_Jml
 
         return num / den
 
