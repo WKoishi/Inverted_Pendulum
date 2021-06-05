@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1014</width>
-    <height>606</height>
+    <width>1007</width>
+    <height>554</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -122,6 +122,11 @@
       <layout class="QVBoxLayout" name="verticalLayout_figure"/>
      </widget>
     </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>参数设置</string>
+     </attribute>
+    </widget>
    </widget>
    <widget class="QLabel" name="label_figure_ok">
     <property name="geometry">
@@ -142,7 +147,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1014</width>
+     <width>1007</width>
      <height>26</height>
     </rect>
    </property>
