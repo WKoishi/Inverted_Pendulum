@@ -66,7 +66,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_figure.setObjectName("verticalLayout_figure")
         self.tabWidget.addTab(self.tab_6, "")
         self.label_figure_ok = QtWidgets.QLabel(self.centralwidget)
-        self.label_figure_ok.setGeometry(QtCore.QRect(180, 470, 151, 41))
+        self.label_figure_ok.setGeometry(QtCore.QRect(180, 470, 231, 41))
         self.label_figure_ok.setObjectName("label_figure_ok")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
