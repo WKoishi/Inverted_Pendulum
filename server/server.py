@@ -1,12 +1,15 @@
+'''
+Author: WKoishi \\
+Creation date: 2021-05-21 \\
+Description: 服务端主程序
+'''
+
 from socketserver import BaseRequestHandler, ThreadingTCPServer
 from control import InvertedPendulumSimulator
 import time, struct
 import threading
 import numpy as np
 from protocol import MyProtocol
-
-BUF_SIZE = 1024
-
 
 class CmdReceiver(threading.Thread, MyProtocol):
 
@@ -37,48 +40,6 @@ class CmdReceiver(threading.Thread, MyProtocol):
 
     def get_recv_detail(self):
         return self.receive_data[2:]
-
-
-# class ControlRuntime(threading.Thread, MyProtocol):
-
-#     def __init__(self, tname, handler):
-#         super(ControlRuntime, self).__init__()
-#         self.tname = tname
-#         self.handler = handler
-#         self.sample_time = 0.013
-#         self.simulator = InvertedPendulumSimulator(self.sample_time)
-#         self.target = 0
-
-#     def run(self) -> None:
-#         while 1:
-
-#             start_tick = time.perf_counter()
-#             self.simulator.runtime(self.target)
-#             end_tick = time.perf_counter()
-
-#             start_tick = time.perf_counter()
-#             surplus_time = self.sample_time - (end_tick - start_tick)
-#             surplus_time = round(surplus_time, 8)
-#             if surplus_time > 0:
-#                 time.sleep(surplus_time)
-
-#             end_tick = time.perf_counter()
-#             #print(threading.currentThread().getName(), surplus_time, end_tick-start_tick)
-
-#             output_posi = self.simulator.get_position()
-#             output_theta = self.simulator.get_theta()
-
-#             float_buf = struct.pack('<2f', *[output_posi, output_theta])
-
-#             send_buf = self.mp_send_buf_pack(float_buf)
-
-#             with self.handler.lock:
-#                 if self.handler.stop_flag:
-#                     break
-
-#             self.handler.request.sendall(send_buf)
-
-
 
 
 class Handler(BaseRequestHandler, MyProtocol):
