@@ -5,14 +5,16 @@ Description: 数据传输协议
 '''
 
 import struct
+
 class MyProtocol:
 
     __buf_HEAD = b'\xac\xac\xac\xac'
 
     CMD_START = b'\x01\x01'
     CMD_CHANGE_TARGET = b'\x02\x02'
-    CMD_CHANGE_PARAM = b'\x03\x03'
-    CMD_DISCONNNECT = b'\x04\x04'
+    CMD_CHANGE_C_PARAM = b'\x03\x03'
+    CMD_READ_C_PARAM = b'\x04\x04'
+    CMD_DISCONNECT = b'\x05\x05'
 
     def mp_send_buf_pack(self, bytes_buf) -> bytes:
         buf_len = len(bytes_buf)
