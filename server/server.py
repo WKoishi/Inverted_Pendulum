@@ -75,14 +75,13 @@ class Handler(BaseRequestHandler, MyProtocol):
                 if surplus_time > 0:
                     time.sleep(surplus_time)
 
-                end_tick = time.perf_counter()
+                #end_tick = time.perf_counter()
                 #print(threading.currentThread().getName(), surplus_time, end_tick-start_tick)
 
                 output_posi = simulator.get_position()
                 output_theta = simulator.get_theta()
 
                 float_buf = struct.pack('<2f', *[output_posi, output_theta])
-
                 send_buf = self.mp_send_buf_pack(float_buf)
 
                 try:
@@ -123,6 +122,7 @@ class Handler(BaseRequestHandler, MyProtocol):
 
 if __name__ == '__main__':
     HOST, PORT = 'localhost', 9999
-
+    
     server = ThreadingTCPServer((HOST,PORT), Handler)
+    print('服务器开启')
     server.serve_forever()
