@@ -1,3 +1,9 @@
+'''
+Author: WKoishi \\
+Creation date: 2021-05-21 \\
+Description: 倒立摆动画绘制
+'''
+
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtWidgets import QWidget
 from math import sin, cos, pi

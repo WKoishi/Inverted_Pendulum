@@ -1,5 +1,10 @@
-import struct
+'''
+Author: WKoishi \\
+Creation date: 2021-05-21 \\
+Description: 数据传输协议
+'''
 
+import struct
 class MyProtocol:
 
     __buf_HEAD = b'\xac\xac\xac\xac'

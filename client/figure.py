@@ -1,3 +1,9 @@
+'''
+Author: WKoishi \\
+Creation date: 2021-05-21 \\
+Description: matplotlib曲线图绘制
+'''
+
 import matplotlib
 matplotlib.use("Qt5Agg")  # 声明使用QT5
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg

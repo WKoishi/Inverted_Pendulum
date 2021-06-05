@@ -1,3 +1,9 @@
+'''
+Author: WKoishi \\
+Creation date: 2021-05-21 \\
+Description: 客户端主程序
+'''
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox
 from window import Ui_MainWindow

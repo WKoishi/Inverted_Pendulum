@@ -1,3 +1,9 @@
+'''
+Author: WKoishi \\
+Creation date: 2021-05-21 \\
+Description: 标尺绘制
+'''
+
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QFont, QColor, QPen
