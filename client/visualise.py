@@ -18,7 +18,7 @@ class ModelVisualise(QWidget):
         self.position = int(self.MAX_VIEW / 2)
         self.theta = pi
         self.car_size = (80, 40)  #(w,h)
-        self.stick_length = 100
+        self.stick_length = 110
 
 
     def set_value(self, position, theta):
@@ -42,7 +42,7 @@ class ModelVisualise(QWidget):
 
         pen = QPen()
 
-        pen.setWidth(15)
+        pen.setWidth(12)
         pen.setColor(QColor(0, 0, 179))
         qp.setPen(pen)
         end_point_x = rotate_center[0] - int(self.stick_length * sin(-self.theta))
