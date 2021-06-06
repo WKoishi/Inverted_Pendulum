@@ -15,8 +15,13 @@ class MyProtocol:
     CMD_CHANGE_C_PARAM = b'\x03\x03'
     CMD_READ_C_PARAM = b'\x04\x04'
     CMD_DISCONNECT = b'\x05\x05'
+    CMD_MODEL_STATE = b'\x99\x99'
 
-    def mp_send_buf_pack(self, bytes_buf) -> bytes:
+    def mp_send_buf_pack(self, command, data_bytes_buf) -> bytes:
+        if data_bytes_buf == None:
+            bytes_buf = command
+        else:
+            bytes_buf = command + data_bytes_buf
         buf_len = len(bytes_buf)
         buf_len = struct.pack('<h', buf_len)
         send_buf = self.__buf_HEAD + buf_len + bytes_buf
