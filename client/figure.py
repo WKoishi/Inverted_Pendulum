@@ -87,6 +87,12 @@ class MyFigure(FigureCanvasQTAgg):
                 #self.fig.canvas.flush_events()
                 self.is_painted = True
 
+    def reset(self):
+        self.is_stable = False
+        self.is_painted = False
+        self.count = 0
+        self.stable_count = 0
+
 
 
 
