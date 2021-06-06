@@ -43,8 +43,8 @@ class InvertedPendulumSimulator:
         self.posi_nabla = 0
         self.theta_nabla = 0
 
-        self.feedback_gain_fast = np.array([-82.8127, -17.4970, -10.0, -12.0002])
-        self.feedback_gain_slow = np.array([-47.6602, -11.8337, -0.3162, -1.3513])
+        self.feedback_gain_fast = [-82.8127, -17.4970, -10.0, -12.0002]
+        self.feedback_gain_slow = [-47.6602, -11.8337, -0.3162, -1.3513]
         self.is_slow_mode = False
 
         self.position_target = 0

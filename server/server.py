@@ -82,7 +82,7 @@ class Handler(BaseRequestHandler, MyProtocol):
                 output_theta = simulator.get_theta()
 
                 float_buf = struct.pack('<2f', *[output_posi, output_theta])
-                send_buf = self.mp_send_buf_pack(float_buf)
+                send_buf = self.mp_send_buf_pack(self.CMD_MODEL_STATE, float_buf)
 
                 try:
                     self.request.sendall(send_buf)
@@ -100,10 +100,28 @@ class Handler(BaseRequestHandler, MyProtocol):
                     simulator_posi_target = struct.unpack('<f', recv_data)[0]
                     receiver.is_receive_cmd = False
 
-                elif command == self.CMD_CHANGE_PARAM:
+                elif command == self.CMD_READ_C_PARAM:
+                    lqr_param = list(simulator.feedback_gain_fast) + \
+                                list(simulator.feedback_gain_slow)
+                    float_buf = struct.pack('<8f', *lqr_param)
+                    send_buf = self.mp_send_buf_pack(self.CMD_READ_C_PARAM, float_buf)
+                    try:
+                        self.request.sendall(send_buf)
+                    except OSError:
+                        break
                     receiver.is_receive_cmd = False
 
-                elif command == self.CMD_DISCONNNECT:
+                elif command == self.CMD_CHANGE_C_PARAM:
+                    recv_data = receiver.get_recv_detail()
+                    lqr_param = struct.unpack('<8f', recv_data)
+                    for i in range(4):
+                        simulator.feedback_gain_fast[i] = lqr_param[i]
+                    for i in range(4):
+                        simulator.feedback_gain_slow[i] = lqr_param[i+4]
+
+                    receiver.is_receive_cmd = False
+
+                elif command == self.CMD_DISCONNECT:
                     receiver.is_receive_cmd = False
 
                 else:
@@ -112,7 +130,6 @@ class Handler(BaseRequestHandler, MyProtocol):
                 time.sleep(surplus_time)
 
 
-    
     def setup(self) -> None:
         print("before handle,连接建立：",self.client_address)
 
