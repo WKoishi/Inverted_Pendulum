@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="my_image">
+    <file>lqr_control.png</file>
+    <file>lqr_control_switch.png</file>
+  </qresource>
+</RCC>
