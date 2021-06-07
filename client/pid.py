@@ -4,7 +4,46 @@ Creation date: 2021-04-01 \\
 Description: PID控制器
 '''
 
-from model_RK4 import TustinIntegrator, Differentiator
+class TustinIntegrator:
+    '''经过双线性变换法离散化的积分器
+    '''
+    def __init__(self, initial_state=0):
+        self.integrator_DSTATE = initial_state
+        self.last_input = 0
+
+    def Add(self, input_val, sample_time):
+        '''进行一次周期的积分
+
+        Parameter:
+        ------------
+        input_val: 积分输入值 \\
+        sample_time: 采样时间
+        '''
+        self.integrator_DSTATE += (sample_time / 2.0) * (input_val + self.last_input)
+        self.last_input = input_val
+
+        return self.integrator_DSTATE
+
+
+class Differentiator:
+    '''一阶离散微分器
+    '''
+    def __init__(self):
+        self.last_input = 0
+
+    def Sub(self, input_val, sample_time):
+        '''进行一次一阶差分
+
+        Parameter:
+        -----------
+        input_val: 输出值 \\
+        sample_time: 采样时间
+        '''
+        output = (input_val - self.last_input) / sample_time
+        self.last_input = input_val
+
+        return output
+
 
 class PID_controller:
     '''位置式PID控制器
