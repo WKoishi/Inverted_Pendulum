@@ -207,9 +207,6 @@ class FirstOrderInvertedPendulum:
         '''
         return self.theta
 
-    def get_car_velocity(self):
-        '''获取小车当前速度
-        '''
-        return self.__X_car_nabla
+
 
 
