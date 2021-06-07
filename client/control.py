@@ -5,31 +5,25 @@ Description: 倒立摆控制主控制流程
 '''
 
 import numpy as np
-from model_RK4 import FirstOrderInvertedPendulum, Differentiator
-from pid import PID_controller
+from pid import PID_controller, Differentiator
 from math import pi, cos
 
-class InvertedPendulumSimulator:
 
-    def __init__(self, sample_time):
+class TotalController:
 
-        self.sample_time = sample_time
+    def __init__(self):
 
-        self.ip_model = FirstOrderInvertedPendulum(M_car=1, 
-                                            M_stick=1,
-                                            stick_lenght=0.6,
-                                            initial_theta=pi,
-                                            sample_time = sample_time)
+        self.sample_time = 0.014
 
         self.theta_PD_controller = PID_controller(Kp=3.392, Ki=0, Kd=0.75,
                                             output_lower_limit = -1000,
                                             output_upper_limit = 1000,
-                                            sample_time = sample_time)
+                                            sample_time = self.sample_time)
 
         self.posi_PD_controller = PID_controller(Kp=1, Ki=0, Kd=1.55,
                                             output_lower_limit = -1000,
                                             output_upper_limit = 1000,
-                                            sample_time = sample_time)
+                                            sample_time = self.sample_time)
 
         self.LQR_CONTROL_ENABLE = 1
 
@@ -43,8 +37,8 @@ class InvertedPendulumSimulator:
         self.posi_nabla = 0
         self.theta_nabla = 0
 
-        self.feedback_gain_fast = [-82.8127, -17.4970, -10.0, -12.0002]
-        self.feedback_gain_slow = [-47.6602, -11.8337, -0.3162, -1.3513]
+        self.lqr_feedback_gain_fast = [-82.8127, -17.4970, -10.0, -12.0002]
+        self.lqr_feedback_gain_slow = [-47.6602, -11.8337, -0.3162, -1.3513]
         self.is_slow_mode = False
 
         self.position_target = 0
@@ -76,9 +70,9 @@ class InvertedPendulumSimulator:
 
     def lqr_control(self, target, theta, theta_nabla, posi, posi_nabla):
         if self.is_slow_mode:
-            feedback_gain = self.feedback_gain_slow
+            feedback_gain = self.lqr_feedback_gain_slow
         else:
-            feedback_gain = self.feedback_gain_fast
+            feedback_gain = self.lqr_feedback_gain_fast
 
         # 计算状态反馈量
         feedback = theta * feedback_gain[0] \
@@ -111,7 +105,26 @@ class InvertedPendulumSimulator:
         return output
 
 
-    def runtime(self, posi_target):
+    def runtime(self, posi_target, now_position, now_theta):
+
+        # 获取当前位置并计算位置的微分
+        self.last_position = self.now_position
+        self.now_position = now_position
+        self.posi_nabla = self.posi_differ.Sub(self.now_position, self.sample_time)
+
+        # 获取当前角度并计算角度的微分
+        self.last_theta = self.now_theta
+        self.now_theta = now_theta
+        self.theta_nabla = self.theta_differ.Sub(self.now_theta, self.sample_time)
+
+        if self.is_swing_up:
+            if abs(self.now_theta) > pi/6 and self.is_slow_mode == False:
+                self.is_slow_mode = True
+            elif abs(self.now_theta) < pi/18 and self.is_slow_mode == True:
+                self.is_slow_mode = False
+
+        if self.is_swing_up == False and abs(self.now_theta) < pi/6:
+            self.is_swing_up = True
 
         self.position_target = posi_target
 
@@ -136,26 +149,7 @@ class InvertedPendulumSimulator:
                 if self.is_impulse > 3:
                     self.is_impulse = 0
 
-        self.ip_model.forward(force_input)
-
-        # 获取当前位置并计算位置的微分
-        self.last_position = self.now_position
-        self.now_position = self.ip_model.get_position()
-        self.posi_nabla = self.posi_differ.Sub(self.now_position, self.sample_time)
-
-        # 获取当前角度并计算角度的微分
-        self.last_theta = self.now_theta
-        self.now_theta = self.ip_model.get_theta()
-        self.theta_nabla = self.theta_differ.Sub(self.now_theta, self.sample_time)
-
-        if self.is_swing_up:
-            if abs(self.now_theta) > pi/6 and self.is_slow_mode == False:
-                self.is_slow_mode = True
-            elif abs(self.now_theta) < pi/18 and self.is_slow_mode == True:
-                self.is_slow_mode = False
-
-        if self.is_swing_up == False and abs(self.now_theta) < pi/6:
-            self.is_swing_up = True
+        return force_input
 
 
     def get_theta(self):

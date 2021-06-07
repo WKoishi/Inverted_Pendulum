@@ -4,12 +4,14 @@ Creation date: 2021-05-21 \\
 Description: 服务端主程序
 '''
 
+from itertools import count
 from socketserver import BaseRequestHandler, ThreadingTCPServer
-from control import InvertedPendulumSimulator
+from model_RK4 import FirstOrderInvertedPendulum
 import time, struct
 import threading
 import numpy as np
 from protocol import MyProtocol
+from math import pi
 
 class CmdReceiver(threading.Thread, MyProtocol):
 
@@ -28,11 +30,12 @@ class CmdReceiver(threading.Thread, MyProtocol):
                     ret, length = self.mp_receive_head(self.handler.request)
                     if ret:
                         # 加锁
-                        with self.handler.lock:
-                            self.receive_data = self.mp_receive_data(self.handler.request, length)
-                            if self.receive_data[0] == self.receive_data[1]:
-                                self.is_receive_cmd = True
-                                self.command = self.receive_data[:2]
+                        self.handler.lock.acquire()
+                        self.receive_data = self.mp_receive_data(self.handler.request, length)
+                        if self.receive_data[0] == self.receive_data[1]:
+                            self.is_receive_cmd = True
+                            self.command = self.receive_data[:2]
+                        self.handler.lock.release()
         except OSError as ex:
             print(self.handler.client_address,"连接断开")
         finally:
@@ -53,10 +56,14 @@ class Handler(BaseRequestHandler, MyProtocol):
         receiver = CmdReceiver('receiver', self)
         receiver.setDaemon(True)
 
-        simulator_posi_target = 0
-        sample_time = 0.013
-        surplus_time = 0.013
-        simulator = InvertedPendulumSimulator(sample_time)
+        input_force = 0
+        sample_time = 0.014
+        surplus_time = 0.014
+        ip_model = FirstOrderInvertedPendulum(M_car=1, 
+                                    M_stick=1,
+                                    stick_lenght=0.6,
+                                    initial_theta=pi,
+                                    sample_time = sample_time)
 
         start_flag = False
 
@@ -66,68 +73,47 @@ class Handler(BaseRequestHandler, MyProtocol):
 
             if start_flag and not receiver.is_receive_cmd:
                 start_tick = time.perf_counter()
-                simulator.runtime(simulator_posi_target)
+                ip_model.forward(input_force)
                 end_tick = time.perf_counter()
 
                 start_tick = time.perf_counter()
                 surplus_time = sample_time - (end_tick - start_tick)
                 surplus_time = round(surplus_time, 8)
-                if surplus_time > 0:
-                    time.sleep(surplus_time)
 
-                #end_tick = time.perf_counter()
-                #print(threading.currentThread().getName(), surplus_time, end_tick-start_tick)
+                # end_tick = time.perf_counter()
+                # print(threading.currentThread().getName(), surplus_time, end_tick-start_tick)
 
-                output_posi = simulator.get_position()
-                output_theta = simulator.get_theta()
+                output_posi = ip_model.get_position()
+                output_theta = ip_model.get_theta()
 
                 float_buf = struct.pack('<2f', *[output_posi, output_theta])
-                send_buf = self.mp_send_buf_pack(self.CMD_MODEL_STATE, float_buf)
+                send_buf = self.mp_send_buf_pack(self.CMD_MODEL_CONTROL, float_buf)
 
                 try:
                     self.request.sendall(send_buf)
                 except OSError:
                     break
 
+                if surplus_time > 0:
+                    time.sleep(0.01)
+
             else:
                 command = receiver.command
                 if command == self.CMD_START:
                     start_flag = True
-                    receiver.is_receive_cmd = False
 
-                elif command == self.CMD_CHANGE_TARGET:
+                elif command == self.CMD_MODEL_CONTROL:
                     recv_data = receiver.get_recv_detail()
-                    simulator_posi_target = struct.unpack('<f', recv_data)[0]
-                    receiver.is_receive_cmd = False
+                    input_force = struct.unpack('<f', recv_data)[0]
 
                 elif command == self.CMD_READ_C_PARAM:
-                    lqr_param = list(simulator.feedback_gain_fast) + \
-                                list(simulator.feedback_gain_slow)
-                    float_buf = struct.pack('<8f', *lqr_param)
-                    send_buf = self.mp_send_buf_pack(self.CMD_READ_C_PARAM, float_buf)
-                    try:
-                        self.request.sendall(send_buf)
-                    except OSError:
-                        break
-                    receiver.is_receive_cmd = False
+                    pass
 
                 elif command == self.CMD_CHANGE_C_PARAM:
-                    recv_data = receiver.get_recv_detail()
-                    lqr_param = struct.unpack('<8f', recv_data)
-                    for i in range(4):
-                        simulator.feedback_gain_fast[i] = lqr_param[i]
-                    for i in range(4):
-                        simulator.feedback_gain_slow[i] = lqr_param[i+4]
+                    pass
 
-                    receiver.is_receive_cmd = False
-
-                elif command == self.CMD_DISCONNECT:
-                    receiver.is_receive_cmd = False
-
-                else:
-                    receiver.is_receive_cmd = False
-
-                time.sleep(surplus_time)
+                receiver.is_receive_cmd = False
+                #time.sleep(surplus_time)
 
 
     def setup(self) -> None:

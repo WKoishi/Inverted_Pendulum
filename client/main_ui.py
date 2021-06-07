@@ -12,6 +12,7 @@ from protocol import MyProtocol
 from ruler import RulerWidget
 from visualise import ModelVisualise
 from figure import MyFigure
+from control import TotalController
 import sys, socket
 import struct
 
@@ -22,7 +23,6 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
     def __init__(self, socket, qt_lock):
         super(MyWindows, self).__init__()
         self.socket = socket
-        #self.qt_lock = qt_lock
 
         self.setupUi(self)
 
@@ -30,6 +30,7 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
         # self.setWindowOpacity(0.95)
         # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
+        self.main_controller = TotalController()
         self.tcp_receivers = StateReceiver(self.socket, qt_lock)
         self.ruler = RulerWidget()
         self.model_visual = ModelVisualise()
@@ -38,8 +39,8 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
         self.verticalLayout_visual.addWidget(self.model_visual)
         self.verticalLayout_figure.addWidget(self.model_figure)
 
-        self.posi_target = 0
-        targe_val_text = '位置目标值: {:.2f}'.format(self.posi_target)
+        self.position_target = 0
+        targe_val_text = '位置目标值: {:.2f}'.format(self.position_target)
         self.label_target_val.setText(targe_val_text)
 
         self.label_figure_ok.setText('')
@@ -64,7 +65,6 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
         self.tcp_receivers.terminate_signal.connect(self.tcp_receivers.stop)
         
         self.Button_connect.clicked.connect(self.pushButton_clicked)
-        self.Button_disconnect.clicked.connect(self.pushButton_clicked)
         self.Button_start.clicked.connect(self.pushButton_clicked)
         self.Button_change_target.clicked.connect(self.pushButton_clicked)
         self.Button_lqr_param_read.clicked.connect(self.pushButton_clicked)
@@ -73,6 +73,7 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
         self.is_connect = False
         self.ip_address = ''
         self.ip_port = 9999
+
 
     def pushButton_clicked(self):
         '''按钮事件处理函数
@@ -96,28 +97,29 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
                 QMessageBox.information(self, '提示', '已连接到 '\
                                 +self.ip_address+':'+str(self.ip_port))
 
-        elif sender == self.Button_disconnect:
-            pass
-
         elif sender == self.Button_start:
             send_buf = self.mp_send_buf_pack(self.CMD_START, None)
-            self.my_sendall(send_buf)
+            self.my_send_all(send_buf)
 
         elif sender == self.Button_change_target:
             text, ok = QInputDialog.getDouble(self, '设置目标值', '请输入目标值', 
                                                 min=-4, max=4, decimals=4)
             if ok:
-                send_buf = self.mp_send_buf_pack(self.CMD_CHANGE_TARGET, 
-                                            struct.pack('<f', float(text)))
-                self.my_sendall(send_buf)
-                self.posi_target = text
+                self.position_target = float(text)
+                # 更新目标值显示
+                targe_val_text = '位置目标值: {:.2f}'.format(self.position_target)
+                self.label_target_val.setText(targe_val_text)
 
                 self.label_figure_ok.setText('')
                 self.label_figure_ok_printed = False
 
         elif sender == self.Button_lqr_param_read:
-            send_buf = self.mp_send_buf_pack(self.CMD_READ_C_PARAM, None)
-            self.my_sendall(send_buf)
+            for i in range(4):
+                self.lineEdit_lqr_param_list[i].setText(
+                    '{:.4f}'.format(self.main_controller.lqr_feedback_gain_fast[i]))
+            for i in range(4):
+                self.lineEdit_lqr_param_list[i+4].setText(
+                    '{:.4f}'.format(self.main_controller.lqr_feedback_gain_slow[i]))
 
         elif sender == self.Button_lqr_param_write:
             lqr_param = []
@@ -129,13 +131,15 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
                     QMessageBox.information(self, '提示', '没有输入数据！')
                     return
 
-            float_buf = struct.pack('<8f', *lqr_param)
-            send_buf = self.mp_send_buf_pack(self.CMD_CHANGE_C_PARAM, float_buf)
-            self.my_sendall(send_buf)
-            QMessageBox.information(self, '提示', '写入成功')
+            for i in range(4):
+                self.main_controller.lqr_feedback_gain_fast[i] = lqr_param[i]
+            for i in range(4):
+                self.main_controller.lqr_feedback_gain_slow[i] = lqr_param[i+4]
+
+            QMessageBox.information(self, '提示', '参数已写入')
 
 
-    def my_sendall(self, send_buf):
+    def my_send_all(self, send_buf):
         try:
             self.socket.sendall(send_buf)
         except OSError:
@@ -148,30 +152,32 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
         self.is_connect = True
         self.tcp_receivers.start()
 
+
     def received_process(self):
         command = self.tcp_receivers.command
 
-        if command == self.CMD_MODEL_STATE:
-            # 更新目标值显示
-            targe_val_text = '位置目标值: {:.2f}'.format(self.posi_target)
-            self.label_target_val.setText(targe_val_text)
+        if command == self.CMD_MODEL_CONTROL:
+
+            data = self.tcp_receivers.get_recv_detail()
+            now_position, now_theta = struct.unpack('<2f', data)
+
+            model_input_force = self.main_controller.runtime(self.position_target, 
+                                now_position, now_theta)
+
+            send_buf = self.mp_send_buf_pack(self.CMD_MODEL_CONTROL, 
+                                struct.pack('<f', model_input_force))
+            self.my_send_all(send_buf)
 
             # 更新倒立摆可视化模型
-            data = self.tcp_receivers.get_recv_detail()
-            position, theta = struct.unpack('<2f', data)
-            self.model_visual.set_value(position, theta)
-            self.ruler.set_value(position)
-            self.model_figure.update_data(self.posi_target, theta, position)
+            self.model_visual.set_value(now_position, now_theta)
+            self.ruler.set_value(now_position)
+            self.model_figure.update_data(self.position_target, now_theta, now_position)
             if self.model_figure.is_painted and not self.label_figure_ok_printed:
                 self.label_figure_ok.setText('模型已稳定，曲线图已更新')
                 self.label_figure_ok_printed = True
 
         elif command == self.CMD_READ_C_PARAM:
-            data = self.tcp_receivers.get_recv_detail()
-            lqr_param = struct.unpack('<8f', data)
-            for i in range(len(self.lineEdit_lqr_param_list)):
-                self.lineEdit_lqr_param_list[i].setText('{:.4f}'.format(lqr_param[i]))
-
+            pass
 
 
     def closeEvent(self, event):
