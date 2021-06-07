@@ -11,11 +11,11 @@ class MyProtocol:
     __buf_HEAD = b'\xac\xac\xac\xac'
 
     CMD_START = b'\x01\x01'
-    CMD_CHANGE_TARGET = b'\x02\x02'
     CMD_CHANGE_C_PARAM = b'\x03\x03'
     CMD_READ_C_PARAM = b'\x04\x04'
     CMD_DISCONNECT = b'\x05\x05'
-    CMD_MODEL_STATE = b'\x99\x99'
+
+    CMD_MODEL_CONTROL = b'\x99\x99'
 
     def mp_send_buf_pack(self, command, data_bytes_buf) -> bytes:
         if data_bytes_buf == None:
