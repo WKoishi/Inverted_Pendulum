@@ -6,48 +6,6 @@ Description: 倒立摆离散模型-四阶龙格库塔法迭代
 
 from math import sin, cos, pi
 
-class TustinIntegrator:
-    '''经过双线性变换法离散化的积分器
-    '''
-    def __init__(self, initial_state=0):
-        self.integrator_DSTATE = initial_state
-        self.last_input = 0
-
-    def Add(self, input_val, sample_time):
-        '''进行一次周期的积分
-
-        Parameter:
-        ------------
-        input_val: 积分输入值 \\
-        sample_time: 采样时间
-        '''
-        self.integrator_DSTATE += (sample_time / 2.0) * (input_val + self.last_input)
-        self.last_input = input_val
-
-        return self.integrator_DSTATE
-
-
-class Differentiator:
-    '''一阶离散微分器
-    '''
-    def __init__(self):
-        self.last_input = 0
-
-    def Sub(self, input_val, sample_time):
-        '''进行一次一阶差分
-
-        Parameter:
-        -----------
-        input_val: 输出值 \\
-        sample_time: 采样时间
-        '''
-        F = 1.0 / sample_time
-        output = F * (input_val - self.last_input)
-        self.last_input = input_val
-
-        return output
-
-
 class FirstOrderInvertedPendulum:
     '''一阶倒立摆离散模型
 
