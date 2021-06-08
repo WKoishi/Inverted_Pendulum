@@ -43,7 +43,7 @@ class MyProtocol:
         head = sock.recv(6)
         head = bytearray(head)
         headIndex = head.find(self.__buf_HEAD)
-        if headIndex == 0:
+        if headIndex == 0 and len(head) == 6:
             length = struct.unpack('<h', head[headIndex+4: headIndex+6])[0]
             return True, length
         else:
