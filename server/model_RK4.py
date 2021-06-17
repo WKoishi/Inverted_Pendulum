@@ -165,6 +165,29 @@ class FirstOrderInvertedPendulum:
         '''
         return self.theta
 
+    def reset_param(self, M_car, M_stick, stick_lenght):
+        # 小车质量
+        self.M_car = M_car
+
+        # 摆杆质量
+        self.M_stick = M_stick
+
+        # 摆杆1/2长度
+        self.l_stick = stick_lenght / 2.0
+
+        # 转动惯量J = (ml^2)/3
+        J_stick = (self.M_stick * self.l_stick**2) / 3.0
+
+        # (J + ml^2)
+        self.term_stick_Jml = J_stick + self.M_stick * self.l_stick**2
+
+        # (m^2 * l^2)
+        self.term_stick_m2l2 = self.M_stick**2 * self.l_stick**2
+
+        self.term_stick_ml = self.M_stick * self.l_stick
+
+        self.term_M_sum = self.M_car + self.M_stick
+
 
 
 
