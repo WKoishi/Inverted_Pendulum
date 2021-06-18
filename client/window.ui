@@ -6,21 +6,27 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1007</width>
-    <height>554</height>
+    <width>989</width>
+    <height>807</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">#MainWindow{border-image: url(:/my_image/resource/KureiKeiBackground-2.png);}</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">#centralwidget{border-image: url(:/my_image/resource/KureiKeiBackground-2.png);}</string>
+   </property>
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
       <x>820</x>
       <y>30</y>
-      <width>161</width>
-      <height>231</height>
+      <width>151</width>
+      <height>221</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_button">
@@ -32,16 +38,16 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="Button_disconnect">
+      <widget class="QPushButton" name="Button_start">
        <property name="text">
-        <string>断开</string>
+        <string>开始</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="Button_start">
+      <widget class="QPushButton" name="Button_pause">
        <property name="text">
-        <string>开始</string>
+        <string>暂停</string>
        </property>
       </widget>
      </item>
@@ -57,8 +63,8 @@
    <widget class="QLabel" name="label_target_val">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>470</y>
+      <x>830</x>
+      <y>280</y>
       <width>151</width>
       <height>41</height>
      </rect>
@@ -73,7 +79,7 @@
       <x>10</x>
       <y>10</y>
       <width>791</width>
-      <height>451</height>
+      <height>811</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -87,9 +93,9 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>20</y>
+        <y>410</y>
         <width>741</width>
-        <height>301</height>
+        <height>251</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_visual"/>
@@ -98,25 +104,20 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>350</y>
+        <y>680</y>
         <width>741</width>
-        <height>51</height>
+        <height>41</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_ruler"/>
      </widget>
-    </widget>
-    <widget class="QWidget" name="tab_6">
-     <attribute name="title">
-      <string>曲线图</string>
-     </attribute>
      <widget class="QWidget" name="verticalLayoutWidget_4">
       <property name="geometry">
        <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>781</width>
-        <height>421</height>
+        <x>10</x>
+        <y>10</y>
+        <width>761</width>
+        <height>381</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_figure"/>
@@ -129,9 +130,9 @@
      <widget class="QWidget" name="gridLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>30</x>
-        <y>10</y>
-        <width>321</width>
+        <x>20</x>
+        <y>20</y>
+        <width>311</width>
         <height>221</height>
        </rect>
       </property>
@@ -294,14 +295,14 @@
      <widget class="QLabel" name="label_12">
       <property name="geometry">
        <rect>
-        <x>0</x>
-        <y>230</y>
-        <width>381</width>
-        <height>221</height>
+        <x>360</x>
+        <y>0</y>
+        <width>401</width>
+        <height>271</height>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">image: url(:/my_image/lqr_control_switch.png)</string>
+       <string notr="true">image: url(:/my_image/resource/lqr_control_switch.png);</string>
       </property>
       <property name="text">
        <string/>
@@ -310,27 +311,106 @@
      <widget class="QLabel" name="label_13">
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>10</y>
-        <width>401</width>
-        <height>411</height>
+        <x>240</x>
+        <y>260</y>
+        <width>541</width>
+        <height>461</height>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">image: url(:/my_image/lqr_control.png)</string>
+       <string notr="true">image: url(:/my_image/resource/lqr_control.png);</string>
       </property>
       <property name="text">
        <string/>
       </property>
+     </widget>
+     <widget class="QWidget" name="verticalLayoutWidget_5">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>400</y>
+        <width>221</width>
+        <height>181</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>倒立摆模型参数</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_15">
+           <property name="text">
+            <string>小车质量(kg)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_model_carM"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <widget class="QLabel" name="label_16">
+           <property name="text">
+            <string>摆杆质量(kg)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_model_stickM"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_11">
+         <item>
+          <widget class="QLabel" name="label_17">
+           <property name="text">
+            <string>摆杆长度(m) </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_model_stickL"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <item>
+          <widget class="QPushButton" name="Button_model_param_read">
+           <property name="text">
+            <string>读取参数</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="Button_model_param_write">
+           <property name="text">
+            <string>写入参数</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
     </widget>
    </widget>
    <widget class="QLabel" name="label_figure_ok">
     <property name="geometry">
      <rect>
-      <x>180</x>
-      <y>470</y>
-      <width>231</width>
+      <x>830</x>
+      <y>330</y>
+      <width>151</width>
       <height>41</height>
      </rect>
     </property>
@@ -344,7 +424,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1007</width>
+     <width>989</width>
      <height>26</height>
     </rect>
    </property>

@@ -5,13 +5,13 @@ Description: 客户端主程序
 '''
 
 from PyQt5 import QtCore
-from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtGui import QDoubleValidator, QFont
 from PyQt5.QtWidgets import QApplication, QMainWindow, QInputDialog, QMessageBox
 from window import Ui_MainWindow
 from protocol import MyProtocol
 from ruler import RulerWidget
 from visualise import ModelVisualise
-from figure import MyFigure
+from figure_dynamic import DynamicFigure
 from control import TotalController
 import sys, socket
 import struct
@@ -26,15 +26,18 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
 
         self.setupUi(self)
 
+        self.setFixedSize(self.width(), self.height())  # 固定窗口大小
+
         # self.setStyleSheet('background-color: rgb(240,240,255);')
         # self.setWindowOpacity(0.95)
         # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
+        # 创建对象
         self.main_controller = TotalController()
         self.tcp_receivers = StateReceiver(self.socket, qt_lock)
         self.ruler = RulerWidget()
         self.model_visual = ModelVisualise()
-        self.model_figure = MyFigure()
+        self.model_figure = DynamicFigure()
         self.verticalLayout_ruler.addWidget(self.ruler)
         self.verticalLayout_visual.addWidget(self.model_visual)
         self.verticalLayout_figure.addWidget(self.model_figure)
@@ -55,9 +58,16 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
                                         self.lineEdit_lqr_slow_K3,
                                         self.lineEdit_lqr_slow_K4]
 
+        self.lineEdit_model_param_list = [self.lineEdit_model_carM,
+                                          self.lineEdit_model_stickM,
+                                          self.lineEdit_model_stickL]
+
         # 添加浮点数输入限制
         pDoubleValidator = QDoubleValidator()
         for object in self.lineEdit_lqr_param_list:
+            object.setValidator(pDoubleValidator)
+
+        for object in self.lineEdit_model_param_list:
             object.setValidator(pDoubleValidator)
 
         # 信号连接
@@ -66,9 +76,12 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
         
         self.Button_connect.clicked.connect(self.pushButton_clicked)
         self.Button_start.clicked.connect(self.pushButton_clicked)
+        self.Button_pause.clicked.connect(self.pushButton_clicked)
         self.Button_change_target.clicked.connect(self.pushButton_clicked)
         self.Button_lqr_param_read.clicked.connect(self.pushButton_clicked)
         self.Button_lqr_param_write.clicked.connect(self.pushButton_clicked)
+        self.Button_model_param_read.clicked.connect(self.pushButton_clicked)
+        self.Button_model_param_write.clicked.connect(self.pushButton_clicked)
 
         self.is_connect = False
         self.ip_address = ''
@@ -76,10 +89,12 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
 
 
     def pushButton_clicked(self):
-        '''按钮事件处理函数
-        '''
+        """
+        按钮事件处理函数
+        """
         sender = self.sender()
 
+        # 连接
         if sender == self.Button_connect:
             if not self.is_connect:
                 host = '127.0.0.1'
@@ -97,10 +112,17 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
                 QMessageBox.information(self, '提示', '已连接到 '\
                                 +self.ip_address+':'+str(self.ip_port))
 
+        # 开始
         elif sender == self.Button_start:
             send_buf = self.mp_send_buf_pack(self.CMD_START, None)
             self.my_send_all(send_buf)
 
+        # 暂停
+        elif sender == self.Button_pause:
+            send_buf = self.mp_send_buf_pack(self.CMD_PAUSE, None)
+            self.my_send_all(send_buf)
+
+        # 修改目标值
         elif sender == self.Button_change_target:
             text, ok = QInputDialog.getDouble(self, '设置目标值', '请输入目标值', 
                                                 min=-4, max=4, decimals=4)
@@ -113,6 +135,7 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
                 self.label_figure_ok.setText('')
                 self.label_figure_ok_printed = False
 
+        # 状态反馈参数读取
         elif sender == self.Button_lqr_param_read:
             for i in range(4):
                 self.lineEdit_lqr_param_list[i].setText(
@@ -121,6 +144,7 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
                 self.lineEdit_lqr_param_list[i+4].setText(
                     '{:.4f}'.format(self.main_controller.lqr_feedback_gain_slow[i]))
 
+        # 状态反馈参数写入
         elif sender == self.Button_lqr_param_write:
             lqr_param = []
             for object in self.lineEdit_lqr_param_list:
@@ -138,24 +162,59 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
 
             QMessageBox.information(self, '提示', '参数已写入')
 
+        # 倒立摆模型参数读取
+        elif sender == self.Button_model_param_read:
+            send_buf = self.mp_send_buf_pack(self.CMD_MODEL_PARAM_READ, None)
+            self.my_send_all(send_buf)
+
+        # 倒立摆模型参数写入
+        elif sender == self.Button_model_param_write:
+            model_param = []
+            for object in self.lineEdit_model_param_list:
+                text = object.text()
+                if text:
+                    model_param.append(float(text))
+                else:
+                    QMessageBox.information(self, '提示', '没有输入数据！')
+                    return
+
+            float_buf = struct.pack('<3f', *model_param)
+            send_buf = self.mp_send_buf_pack(self.CMD_MODEL_PARAM_WRITE, float_buf)
+            self.my_send_all(send_buf)
+            QMessageBox.information(self, '提示', '参数已写入')
+
+
 
     def my_send_all(self, send_buf):
+        """
+        socket发送数据
+        """
         try:
             self.socket.sendall(send_buf)
         except OSError:
             QMessageBox.information(self, '提示', '连接已断开')
-            self.model_figure.reset()
 
 
     def server_connect(self):
+        """
+        socket连接
+        """
         self.socket.connect((self.ip_address, self.ip_port))
         self.is_connect = True
         self.tcp_receivers.start()
 
 
     def received_process(self):
+        """
+        接收处理函数
+        
+        Note
+        --------
+        与接收子线程存在信号连接
+        """
         command = self.tcp_receivers.command
 
+        # 模型状态量控制量传输
         if command == self.CMD_MODEL_CONTROL:
 
             data = self.tcp_receivers.get_recv_detail()
@@ -169,18 +228,25 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
             self.my_send_all(send_buf)
 
             # 更新倒立摆可视化模型
-            self.model_visual.set_value(now_position, now_theta)
-            self.ruler.set_value(now_position)
+            self.model_visual.update_state(now_position, now_theta)
+            self.ruler.update_value(now_position)
             self.model_figure.update_data(self.position_target, now_theta, now_position)
-            if self.model_figure.is_painted and not self.label_figure_ok_printed:
-                self.label_figure_ok.setText('模型已稳定，曲线图已更新')
+            if self.model_figure.is_stable and not self.label_figure_ok_printed:
+                self.label_figure_ok.setText('模型已稳定')
                 self.label_figure_ok_printed = True
 
-        elif command == self.CMD_READ_C_PARAM:
-            pass
+        # 读取模型参数传输
+        elif command == self.CMD_MODEL_PARAM_READ:
+            recv_data = self.tcp_receivers.get_recv_detail()
+            float_buf = struct.unpack('<3f', recv_data)
+            for i, object in enumerate(self.lineEdit_model_param_list):
+                object.setText('{:.4f}'.format(float_buf[i]))
 
 
     def closeEvent(self, event):
+        """
+        窗口关闭事件，Qt内部存在信号连接
+        """
         reply = QMessageBox.question(self, '确认', '确认退出吗',
                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
@@ -194,7 +260,7 @@ class MyWindows(QMainWindow, Ui_MainWindow, MyProtocol):
 class StateReceiver(QtCore.QThread, MyProtocol):
     '''倒立摆状态（位移、摆角）接收机
     '''
-
+    # 创建信号
     received_signal = QtCore.pyqtSignal()
     terminate_signal = QtCore.pyqtSignal()
 
@@ -213,9 +279,8 @@ class StateReceiver(QtCore.QThread, MyProtocol):
                 self.receive_data = self.mp_receive_data(self.socket, length)
                 if self.receive_data[0] == self.receive_data[1]:
                     self.command = self.receive_data[:2]
-                    # 发射接收完成信号
                     self.qt_lock.unlock()
-                    self.received_signal.emit()
+                    self.received_signal.emit()  # 发射接收完成信号
                 else:
                     self.qt_lock.unlock()
 
@@ -232,6 +297,9 @@ if __name__ == '__main__':
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Qt_lock = QtCore.QMutex()
     app = QApplication(sys.argv)
+    font = QFont()
+    font.setFamily('微软雅黑')
+    app.setFont(font)
     main_ui = MyWindows(client, Qt_lock)
     main_ui.show()
     sys.exit(app.exec_())
