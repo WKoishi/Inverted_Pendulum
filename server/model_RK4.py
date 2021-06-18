@@ -7,7 +7,7 @@ Description: 倒立摆离散模型-四阶龙格库塔法迭代
 from math import sin, cos, pi
 
 class FirstOrderInvertedPendulum:
-    '''一阶倒立摆离散模型
+    """一阶倒立摆离散模型
 
     Parameter:
     ----------
@@ -17,7 +17,7 @@ class FirstOrderInvertedPendulum:
     friction: 摩擦系数 \\
     initial_theta: 摆角初始角度 \\
     sample_time: 采样时间
-    '''
+    """
 
     def __init__(self, M_car, M_stick, stick_lenght, initial_theta, sample_time, 
                     friction=0):
@@ -70,12 +70,12 @@ class FirstOrderInvertedPendulum:
 
 
     def forward(self, input_force):
-        '''使系统进行一次迭代
+        """使系统进行一次迭代
 
         Parameter:
         -----------
         input_force: 施加在小车上的力
-        '''
+        """
         self.input_force = input_force
         rk_h = self.sample_time
 
@@ -128,6 +128,9 @@ class FirstOrderInvertedPendulum:
 
 
     def __x_state_cal(self, input_val, x_1, theta, theta_1):
+        """
+        位移x二阶微分方程
+        """
         sin_theta = sin(theta)
         cos_theta = cos(theta)
 
@@ -142,6 +145,9 @@ class FirstOrderInvertedPendulum:
         return num / den
 
     def __theta_state_cal(self, input_val, x_1, theta, theta_1):
+        """
+        摆角theta二阶微分方程
+        """
         sin_theta = sin(theta)
         cos_theta = cos(theta)
 
@@ -156,16 +162,21 @@ class FirstOrderInvertedPendulum:
         return num / den
 
     def get_position(self):
-        '''获取当前小车位置
-        '''
+        """
+        获取当前小车位置
+        """
         return self.X_car
 
     def get_theta(self):
-        '''获取当前摆角
-        '''
+        """
+        获取当前摆角
+        """
         return self.theta
 
     def reset_param(self, M_car, M_stick, stick_lenght):
+        """
+        倒立摆参数重设
+        """
         # 小车质量
         self.M_car = M_car
 

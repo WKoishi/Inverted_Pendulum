@@ -8,13 +8,14 @@ from socketserver import BaseRequestHandler, ThreadingTCPServer
 from model_RK4 import FirstOrderInvertedPendulum
 import time, struct
 import threading
-import numpy as np
 from protocol import MyProtocol
 from filter import AntiPeakFilter
 from math import pi
 
 class CmdReceiver(threading.Thread, MyProtocol):
-
+    """
+    socket接收线程类
+    """
     def __init__(self, tname, handler):
         super(CmdReceiver, self).__init__()
         self.tname = tname
@@ -46,7 +47,9 @@ class CmdReceiver(threading.Thread, MyProtocol):
 
 
 class Handler(BaseRequestHandler, MyProtocol):
-
+    """
+    ThreadingTCPServer服务类
+    """
     lock = threading.Lock()
 
     def handle(self) -> None:
