@@ -4,13 +4,13 @@ Creation date: 2021-05-21 \\
 Description: 服务端主程序
 '''
 
-from itertools import count
 from socketserver import BaseRequestHandler, ThreadingTCPServer
 from model_RK4 import FirstOrderInvertedPendulum
 import time, struct
 import threading
 import numpy as np
 from protocol import MyProtocol
+from filter import AntiPeakFilter
 from math import pi
 
 class CmdReceiver(threading.Thread, MyProtocol):
@@ -65,6 +65,8 @@ class Handler(BaseRequestHandler, MyProtocol):
                                     initial_theta=pi,
                                     sample_time = sample_time)
 
+        input_force_filter = AntiPeakFilter(80, sample_time, 1)
+
         start_flag = False
 
         receiver.start()
@@ -86,7 +88,7 @@ class Handler(BaseRequestHandler, MyProtocol):
                 output_posi = ip_model.get_position()
                 output_theta = ip_model.get_theta()
 
-                float_buf = struct.pack('<2f', *[output_posi, output_theta])
+                float_buf = struct.pack('<2f', output_posi, output_theta)
                 send_buf = self.mp_send_buf_pack(self.CMD_MODEL_CONTROL, float_buf)
 
                 try:
@@ -97,20 +99,36 @@ class Handler(BaseRequestHandler, MyProtocol):
                 if surplus_time > 0:
                     time.sleep(0.01)
 
-            else:
+            elif receiver.is_receive_cmd:
                 command = receiver.command
-                if command == self.CMD_START:
-                    start_flag = True
-
-                elif command == self.CMD_MODEL_CONTROL:
+                if command == self.CMD_MODEL_CONTROL:
                     recv_data = receiver.get_recv_detail()
                     input_force = struct.unpack('<f', recv_data)[0]
+                    input_force = input_force_filter.get_value(input_force)
 
-                elif command == self.CMD_READ_C_PARAM:
-                    pass
+                else:
+                    if command == self.CMD_START:
+                        start_flag = True
 
-                elif command == self.CMD_CHANGE_C_PARAM:
-                    pass
+                    elif command == self.CMD_PAUSE:
+                        start_flag = False
+
+                    elif command == self.CMD_MODEL_PARAM_READ:
+                        float_buf = struct.pack('<3f', ip_model.M_car, ip_model.M_stick, 
+                                                ip_model.l_stick * 2)
+                        send_buf = self.mp_send_buf_pack(self.CMD_MODEL_PARAM_READ, float_buf)
+                        try:
+                            self.request.sendall(send_buf)
+                        except OSError:
+                            break
+
+                    elif command == self.CMD_MODEL_PARAM_WRITE:
+                        recv_data = receiver.get_recv_detail()
+                        float_buf = struct.unpack('<3f', recv_data)
+                        ip_model.reset_param(float_buf[0], float_buf[1], float_buf[2])
+                        start_flag = False
+
+                    time.sleep(0.01)
 
                 receiver.is_receive_cmd = False
                 #time.sleep(surplus_time)
