@@ -4,10 +4,8 @@ Creation date: 2021-05-20 \\
 Description: 倒立摆控制主控制流程
 '''
 
-import numpy as np
 from pid import PID_controller, Differentiator
 from math import pi, cos
-
 
 class TotalController:
     """
@@ -59,19 +57,17 @@ class TotalController:
         ------------
         力（force）输入
         '''
-        kinetic_energy = (1/240) * theta_nabla**2
+        output = 0
+        output_max = 9.8 * 2
 
+        kinetic_energy = (1/240) * theta_nabla**2
         potential_energy = (cos(theta)-1) * 9.8 * 0.25 * 0.1
 
-        sign = 0
         if theta_nabla * cos(theta) >= 0:
-            sign = 1
+            output = gain * (kinetic_energy + potential_energy)
         else:
-            sign = -1
+            output = -(gain * (kinetic_energy + potential_energy))
 
-        output = gain * sign * (kinetic_energy + potential_energy)
-
-        output_max = 9.8 * 2
         if output > output_max:
             output = output_max
         elif output < -output_max:

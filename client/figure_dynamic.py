@@ -1,4 +1,9 @@
-from PyQt5 import QtCore
+'''
+Author: WKoishi \\
+Creation date: 2021-06-10 \\
+Description: pyqtgraph动态曲线图绘制
+'''
+
 import pyqtgraph as pg
 import numpy as np
 
@@ -79,6 +84,7 @@ class DynamicFigure(pg.PlotWidget):
             if self.stable_count >= self.STABLE_TIMES:
                 self.is_stable = True
 
+            # 进行曲线绘制
             self.target_curve.setData(self.x_dim[:self.count], self.target_array[:self.count])
             self.posi_curve.setData(self.x_dim[:self.count], self.posi_array[:self.count])
             self.theta_curve.setData(self.x_dim[:self.count], self.theta_array[:self.count])
