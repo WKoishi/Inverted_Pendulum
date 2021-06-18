@@ -1,5 +1,7 @@
-一阶倒立摆离散模型的python实现
+一阶倒立摆的仿真及远程网络控制
 
 ## 所需的第三方库：
 numpy \
-matplotlib
+matplotlib \
+PyQt5 \
+pyqtgraph
