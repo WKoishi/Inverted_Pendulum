@@ -285,7 +285,10 @@ class StateReceiver(QtCore.QThread, MyProtocol):
                     self.qt_lock.unlock()
 
     def get_recv_detail(self):
-        return self.receive_data[2:]
+        self.qt_lock.lock()
+        data = self.receive_data[2:]
+        self.qt_lock.unlock()
+        return data
 
     def stop(self):
         print('receiver terminate')

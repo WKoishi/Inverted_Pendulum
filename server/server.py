@@ -16,10 +16,11 @@ class CmdReceiver(threading.Thread, MyProtocol):
     """
     socket接收线程类
     """
-    def __init__(self, tname, handler):
+    def __init__(self, tname, handler, lock):
         super(CmdReceiver, self).__init__()
         self.tname = tname
         self.handler = handler
+        self.lock = lock
         self.receive_data = []
         self.command = b''
         self.is_receive_cmd = False
@@ -31,12 +32,12 @@ class CmdReceiver(threading.Thread, MyProtocol):
                     ret, length = self.mp_receive_head(self.handler.request)
                     if ret:
                         # 加锁
-                        self.handler.lock.acquire()
+                        self.lock.acquire()
                         self.receive_data = self.mp_receive_data(self.handler.request, length)
                         if self.receive_data[0] == self.receive_data[1]:
                             self.is_receive_cmd = True
                             self.command = self.receive_data[:2]
-                        self.handler.lock.release()
+                        self.lock.release()
         except OSError as ex:
             print(self.handler.client_address,"连接断开")
         finally:
@@ -50,13 +51,14 @@ class Handler(BaseRequestHandler, MyProtocol):
     """
     ThreadingTCPServer服务类
     """
-    lock = threading.Lock()
 
     def handle(self) -> None:
         '''一个子线程
         '''
         print(threading.currentThread().getName())
-        receiver = CmdReceiver('receiver', self)
+
+        lock = threading.Lock()
+        receiver = CmdReceiver('receiver', self, lock)
         receiver.setDaemon(True)
 
         input_force = 0
@@ -105,7 +107,9 @@ class Handler(BaseRequestHandler, MyProtocol):
             elif receiver.is_receive_cmd:
                 command = receiver.command
                 if command == self.CMD_MODEL_CONTROL:
+                    lock.acquire()
                     recv_data = receiver.get_recv_detail()
+                    lock.release()
                     input_force = struct.unpack('<f', recv_data)[0]
                     input_force = input_force_filter.get_value(input_force)
 
