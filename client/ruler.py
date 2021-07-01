@@ -46,21 +46,21 @@ class RulerWidget(QWidget):
 
         # 绘制进度条
 
-        qp.setPen(QColor(255, 255, 255))
+        qp.setPen(QColor(155, 155, 155))
 
         if self.value >= 0:
             x_delta = int(posi_shift_gain * self.value)
             x_posi = x_delta
 
             qp.setBrush(QColor(255, 255, 184))
-            qp.drawRect(width_mid, 0, x_posi, Qheight)
+            qp.drawRect(width_mid, 0, x_delta, Qheight)
 
         elif self.value < 0:
             x_delta = int(posi_shift_gain * abs(self.value))
             x_posi = width_mid - x_delta
 
             qp.setBrush(QColor(255, 184, 255))
-            qp.drawRect(x_posi, 0, width_mid-x_posi, Qheight) # x,y,w,h
+            qp.drawRect(x_posi, 0, x_delta, Qheight) # x,y,w,h
 
         # 绘制边框
         pen = QPen(QColor(20, 20, 20), 1, Qt.SolidLine)
@@ -72,7 +72,7 @@ class RulerWidget(QWidget):
         step = int(posi_shift_gain / 2)
         j = 0
         for posi in range(int(self.car_size[0]/2), 17*step, step):
-            posi += 1
+            posi += 2
             qp.drawLine(posi, 0, posi, 5)
             metrics = qp.fontMetrics()
             fw = metrics.width(str(self.num[j]))
