@@ -149,7 +149,7 @@ class Handler(BaseRequestHandler, MyProtocol):
 
 
 if __name__ == '__main__':
-    HOST, PORT = 'localhost', 9999
+    HOST, PORT = 'localhost', 14514
     
     server = ThreadingTCPServer((HOST,PORT), Handler)
     print('服务器开启')
