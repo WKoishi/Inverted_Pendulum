@@ -1,25 +1,30 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from control import InvertedPendulumSimulator
-import socket
-
-sample_time = 0.005
+from model_RK4 import FirstOrderInvertedPendulum
+import math
 
 iteration = 3000
 
 if __name__ == '__main__':
 
-    simulator = InvertedPendulumSimulator(sample_time)
+    input_force = 0
+    sample_time = 0.014
+    surplus_time = 0.014
+    ip_model = FirstOrderInvertedPendulum(M_car = 1, 
+                                M_stick = 1,
+                                stick_lenght = 0.6,
+                                initial_theta = math.pi / 6,
+                                sample_time = sample_time)
 
     theta_array = np.zeros((iteration))
     posi_array = np.zeros((iteration))
 
     for i in range(iteration):
 
-        simulator.runtime(0)
+        ip_model.forward(0)
 
-        theta_array[i] = simulator.get_theta()
-        posi_array[i] = simulator.get_position()
+        theta_array[i] = ip_model.get_theta()
+        posi_array[i] = ip_model.get_position()
 
     x = np.arange(iteration)
     plt.plot(x, theta_array, label='theta')
