@@ -5,7 +5,7 @@ Description: 服务端主程序
 '''
 
 from socketserver import BaseRequestHandler, ThreadingTCPServer
-from model_RK4 import FirstOrderInvertedPendulum
+from model_plus import FirstOrderInvertedPendulum
 import time, struct
 import threading
 from protocol import MyProtocol
